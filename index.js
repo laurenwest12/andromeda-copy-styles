@@ -4,8 +4,8 @@ const app = express();
 const { type } = require('./config.js');
 const { andromedaAuthorization } = require('./authorization.js');
 const { sendErrorReport } = require('./functions/errorReporting.js');
-const { connectDb, submitAllQueries } = require('./sql');
-const { getAndromedaData } = require('./andromeda.js');
+const { connectDb, submitAllQueries, getSQLServerData } = require('./sql');
+const { getAndromedaData, updateAndromedaData } = require('./andromeda.js');
 
 const server = app.listen(6000, async () => {
   console.log('App is listening...');
@@ -21,9 +21,15 @@ const server = app.listen(6000, async () => {
     const submitErrors = await submitAllQueries(data, 'SourceStyleImport');
     errors.push(submitErrors);
 
-    // 3. Get all styles from SourceStyleImport where AndromedaProcessed = 'No'
-    // 4. Update carryforward flag to false in Andromeda
-    // 5. Update AndromedaProcessed = 'Yes' if update was successful
+    // 3. Get all styles from SourceStyleImport where AndromedaProcessed = 'No'. This is done separately to make sure we are updating any styles that could not get updated the previous run because someone was currently editing the style in Andromeda.
+    const stylesToUpdate = await getSQLServerData(
+      'SourceStyleImport',
+      `WHERE AndromedaProcessed = 'No'`
+    );
+
+    // 4. Update carry forward flag to false in Andromeda and update AndromedaProcessed = 'Yes' if update was successful
+    const updateErrors = await updateAndromedaData(stylesToUpdate);
+    errors.push(updateErrors);
   } catch (err) {
     errors.push({
       type,
@@ -32,8 +38,7 @@ const server = app.listen(6000, async () => {
   }
 
   if (errors.flat().length) {
-    console.log(errors);
-    //await sendErrorReport(errors.flat(), type);
+    await sendErrorReport(errors.flat(), type);
   }
 
   process.kill(process.pid, 'SIGTERM');

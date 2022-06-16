@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { url } = require('./config.js');
+const { updateProessedFlag } = require('./sql.js');
 
 const getAndromedaData = async (query, start) => {
   // //Custom query example
@@ -49,6 +50,32 @@ const getAndromedaData = async (query, start) => {
   );
 };
 
+const updateAndromedaData = async (data) => {
+  const errors = [];
+
+  for (let i = 0; i < data.length; ++i) {
+    const { idStyle } = data[i];
+    try {
+      const res = await axios.post(`${url}/bo/DevelopmentStyle/${idStyle}`, {
+        Entity: {
+          cat33: false,
+        },
+      });
+
+      res?.data?.IsSuccess &&
+        (await updateProessedFlag('SourceStyleImport', 'idStyle', idStyle));
+    } catch (err) {
+      errors.push({
+        idStyle,
+        err: err?.message,
+      });
+    }
+  }
+
+  return errors;
+};
+
 module.exports = {
   getAndromedaData,
+  updateAndromedaData,
 };

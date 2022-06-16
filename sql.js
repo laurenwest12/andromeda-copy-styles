@@ -48,6 +48,14 @@ const executeProcedure = async (proc) => {
   return 'Complete';
 };
 
+const updateProessedFlag = async (table, field, value) => {
+  await pool.query(
+    `UPDATE ${table}
+  SET AndromedaProcessed = 'Yes', AndromedaProcessedTime = CURRENT_TIMESTAMP
+  WHERE ${field} = '${value}'`
+  );
+};
+
 const submitQuery = async (query) => {
   await pool.query(query);
 };
@@ -74,6 +82,7 @@ module.exports = {
   getLastRunTime,
   getSQLServerData,
   executeProcedure,
+  updateProessedFlag,
   submitQuery,
   submitAllQueries,
 };
