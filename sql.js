@@ -22,16 +22,21 @@ const getLastRunTime = async (table, field) => {
   return res?.recordset[0][field];
 };
 
+const getValues = (data) => {
+  const values = Object.values(data);
+  let sqlValues = `(`;
+  values.map((value, index) => {
+    index === values.length - 1
+      ? (sqlValues += `'${value}')`)
+      : (sqlValues += `'${value}',`);
+  });
+  return sqlValues;
+};
+
 const getSQLServerData = async (table, where) => {
   const query = `SELECT * FROM ${table} ${where ? where : ''}`;
   const res = await pool.query(query);
   return res?.recordset;
-};
-
-const insertTableStatement = (table, fields, values) => {
-  return `SELECT *
-    INTO ${table}
-    FROM (VALUES ${values}) t1 ${fields}`;
 };
 
 const insertStatement = (table, values) => {
@@ -45,17 +50,21 @@ const executeProcedure = async (proc) => {
 
 const submitQuery = async (query) => {
   await pool.query(query);
-  return 'Complete';
 };
 
-const submitAllQueries = async (fn, data, table) => {
+const submitAllQueries = async (data, table) => {
   const errors = [];
   for (let i = 0; i < data.length; ++i) {
-    const values = await fn(data[i]);
+    const values = getValues(data[i]);
     const query = insertStatement(table, values);
-    const res = await submitQuery(query);
-    if (res.indexOf('Error') !== -1) {
-      errors.push({ query, err: res, type: table });
+    console.log(query);
+    try {
+      await submitQuery(query);
+    } catch (err) {
+      errors.push({
+        query,
+        err: err?.message,
+      });
     }
   }
   return errors;
