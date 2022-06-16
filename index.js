@@ -3,9 +3,9 @@ const app = express();
 
 const { type } = require('./config.js');
 const { andromedaAuthorization } = require('./authorization.js');
-const { getStartTime, submitStartTime } = require('./functions/runTimes.js');
 const { sendErrorReport } = require('./functions/errorReporting.js');
 const { connectDb } = require('./sql');
+const { getAndromedaData } = require('./andromeda.js');
 
 const server = app.listen(6000, async () => {
   console.log('App is listening...');
@@ -13,6 +13,16 @@ const server = app.listen(6000, async () => {
   try {
     await andromedaAuthorization();
     await connectDb();
+
+    const data = await getAndromedaData('DevelopmentStyle');
+    console.log(data);
+
+    // 1. Get all styles created after last run time
+    // 2. Filter to only styles where the style number is different than the source style number and the carryforward flag is true
+    // 3. Insert into SourceStyleImport
+    // 4. Get all styles from SourceStyleImport where AndromedaProcessed = 'No'
+    // 5. Update carryforward flag to false in Andromeda
+    // 6. Update AndromedaProcessed = 'Yes' if update was successful
   } catch (err) {
     errors.push({
       type,
@@ -21,7 +31,8 @@ const server = app.listen(6000, async () => {
   }
 
   if (errors.flat().length) {
-    await sendErrorReport(errors.flat(), type);
+    console.log(errors);
+    //await sendErrorReport(errors.flat(), type);
   }
 
   process.kill(process.pid, 'SIGTERM');
