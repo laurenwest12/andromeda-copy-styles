@@ -19,11 +19,11 @@ const server = app.listen(6000, async () => {
 
     // 2. Insert into SourceStyleImport
     const submitErrors = await submitAllQueries(data, 'SourceStyleImport');
-    console.log(submitErrors);
+    errors.push(submitErrors);
 
-    // 4. Get all styles from SourceStyleImport where AndromedaProcessed = 'No'
-    // 5. Update carryforward flag to false in Andromeda
-    // 6. Update AndromedaProcessed = 'Yes' if update was successful
+    // 3. Get all styles from SourceStyleImport where AndromedaProcessed = 'No'
+    // 4. Update carryforward flag to false in Andromeda
+    // 5. Update AndromedaProcessed = 'Yes' if update was successful
   } catch (err) {
     errors.push({
       type,

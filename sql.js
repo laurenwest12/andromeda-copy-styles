@@ -57,7 +57,6 @@ const submitAllQueries = async (data, table) => {
   for (let i = 0; i < data.length; ++i) {
     const values = getValues(data[i]);
     const query = insertStatement(table, values);
-    console.log(query);
     try {
       await submitQuery(query);
     } catch (err) {
