@@ -3,13 +3,10 @@ const { url } = require('./config.js');
 const { updateProessedFlag } = require('./sql.js');
 
 const getAndromedaData = async (query, start) => {
-  // //Custom query example
-  // res = await axios.post(`${url}/search/query/${query}`, {
-  //   getafterdate: start,
-  // });
-
   // Get all development styles from Andromeda
-  const res = await axios.get(`${url}/bo/${query}`);
+  const res = await axios.post(`${url}/search/query/${query}`, {
+    getafterdate: start,
+  });
 
   // Create an array of only the relevant data for each development style
   const sourceStyleData = res.data.map(
@@ -38,12 +35,12 @@ const getAndromedaData = async (query, start) => {
   );
 
   /*
-	Return only styles where...
-			1. The source style is not blank
-			2. The source style does not match the style number of the development style
-			3. The carry forward flag is set to true
-	These are the ones where the carry forward flag needs to be updated
- */
+  	Return only styles where...
+  			1. The source style is not blank
+  			2. The source style does not match the style number of the development style
+  			3. The carry forward flag is set to true
+  	These are the ones where the carry forward flag needs to be updated
+   */
   return sourceStyleData.filter(
     ({ SourceStyle, Style, CarryForward }) =>
       SourceStyle !== '' && SourceStyle !== Style && CarryForward === 'Yes'
