@@ -78,11 +78,7 @@ const updateAndromedaData = async (data, carryfoward) => {
         });
 
         res?.data?.IsSuccess &&
-          (await updateProessedFlag(
-            'SourceStyleImportNew',
-            'idStyle',
-            idStyle
-          ));
+          (await updateProessedFlag('SourceStyleImport', 'idStyle', idStyle));
       } catch (err) {
         errors.push({
           idStyle,
@@ -93,17 +89,13 @@ const updateAndromedaData = async (data, carryfoward) => {
       try {
         const res = await axios.post(`${url}/bo/DevelopmentStyle/${idStyle}`, {
           Entity: {
-            // cat33: false,
+            cat33: false,
             cat24: Season,
           },
         });
 
         res?.data?.IsSuccess &&
-          (await updateProessedFlag(
-            'SourceStyleImportNew',
-            'idStyle',
-            idStyle
-          ));
+          (await updateProessedFlag('SourceStyleImport', 'idStyle', idStyle));
       } catch (err) {
         errors.push({
           idStyle,
