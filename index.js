@@ -13,7 +13,7 @@ const {
 } = require('./sql');
 const { getAndromedaData, updateAndromedaData } = require('./andromeda.js');
 
-const server = app.listen(6000, async () => {
+const server = app.listen(6024, async () => {
   console.log('App is listening...');
   const errors = [];
   try {
