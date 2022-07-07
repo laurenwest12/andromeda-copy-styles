@@ -62,25 +62,45 @@ const getAndromedaData = async (query, start) => {
   // );
 };
 
-const updateAndromedaData = async (data) => {
+const updateAndromedaData = async (data, carryfoward) => {
   const errors = [];
 
   for (let i = 0; i < data.length; ++i) {
-    const { idStyle } = data[i];
-    try {
-      const res = await axios.post(`${url}/bo/DevelopmentStyle/${idStyle}`, {
-        Entity: {
-          cat33: false,
-        },
-      });
+    const { idStyle, Season } = data[i];
 
-      res?.data?.IsSuccess &&
-        (await updateProessedFlag('SourceStyleImport', 'idStyle', idStyle));
-    } catch (err) {
-      errors.push({
-        idStyle,
-        err: err?.message,
-      });
+    if (carryfoward) {
+      try {
+        const res = await axios.post(`${url}/bo/DevelopmentStyle/${idStyle}`, {
+          Entity: {
+            cat33: true,
+          },
+        });
+
+        res?.data?.IsSuccess &&
+          (await updateProessedFlag('SourceStyleImport', 'idStyle', idStyle));
+      } catch (err) {
+        errors.push({
+          idStyle,
+          err: err?.message,
+        });
+      }
+    } else {
+      try {
+        const res = await axios.post(`${url}/bo/DevelopmentStyle/${idStyle}`, {
+          Entity: {
+            cat33: false,
+            cat24: Season,
+          },
+        });
+
+        res?.data?.IsSuccess &&
+          (await updateProessedFlag('SourceStyleImport', 'idStyle', idStyle));
+      } catch (err) {
+        errors.push({
+          idStyle,
+          err: err?.message,
+        });
+      }
     }
   }
 
