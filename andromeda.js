@@ -66,7 +66,8 @@ const updateAndromedaData = async (data, carryfoward) => {
   const errors = [];
 
   for (let i = 0; i < data.length; ++i) {
-    const { idStyle, Season } = data[i];
+    const { idStyle, Style, Season, OriginalSeasonYear } = data[i];
+    console.log(idStyle, Style, Season, OriginalSeasonYear);
 
     if (carryfoward) {
       try {
@@ -77,7 +78,11 @@ const updateAndromedaData = async (data, carryfoward) => {
         });
 
         res?.data?.IsSuccess &&
-          (await updateProessedFlag('SourceStyleImport', 'idStyle', idStyle));
+          (await updateProessedFlag(
+            'SourceStyleImportNew',
+            'idStyle',
+            idStyle
+          ));
       } catch (err) {
         errors.push({
           idStyle,
@@ -88,13 +93,17 @@ const updateAndromedaData = async (data, carryfoward) => {
       try {
         const res = await axios.post(`${url}/bo/DevelopmentStyle/${idStyle}`, {
           Entity: {
-            cat33: false,
+            // cat33: false,
             cat24: Season,
           },
         });
 
         res?.data?.IsSuccess &&
-          (await updateProessedFlag('SourceStyleImport', 'idStyle', idStyle));
+          (await updateProessedFlag(
+            'SourceStyleImportNew',
+            'idStyle',
+            idStyle
+          ));
       } catch (err) {
         errors.push({
           idStyle,

@@ -39,31 +39,32 @@ const server = app.listen(6000, async () => {
           2. The Source Style = Style and CarryForward = 'Yes' and OriginalSeasonYear <> Season
     */
 
-    await submitQuery(`
-    UPDATE SourceStyleImportNew SET AndromedaProcessed = 'Yes'
-    WHERE
-    ((Style = SourceStyle) AND
-    (CarryForward = 'Yes' and OriginalSeasonYear <> Season))
-    OR
-    ((Style <> SourceStyle) AND
-    (CarryForward = 'No' and Season = OriginalSeasonYear))
-    `);
+    // await submitQuery(`
+    // UPDATE SourceStyleImportNew SET AndromedaProcessed = 'Yes'
+    // WHERE
+    // ((Style = SourceStyle) AND
+    // (CarryForward = 'Yes' and OriginalSeasonYear <> Season))
+    // OR
+    // ((Style <> SourceStyle) AND
+    // (CarryForward = 'No' and Season = OriginalSeasonYear))
+    // `);
 
-    // 5. Get all styles from SourceStyleImport where AndromedaProcessed = 'No' and SourceStyle = Style
-    const carryForwards = await getSQLServerData(
-      'SourceStyleImport',
-      `WHERE AndromedaProcessed = 'No' and SourceStyle = Style`
-    );
+    // // 5. Get all styles from SourceStyleImport where AndromedaProcessed = 'No' and SourceStyle = Style
+    // const carryForwards = await getSQLServerData(
+    //   'SourceStyleImportNew',
+    //   `WHERE AndromedaProcessed = 'No' and SourceStyle = Style`
+    // );
 
-    // 6. Update carry forward flag to true in Andromeda and update AndromedaProcessed = 'Yes' if update was successful
-    const updateCFErrors = await updateAndromedaData(carryForwards, true);
-    errors.push(updateCFErrors);
+    // // 6. Update carry forward flag to true in Andromeda and update AndromedaProcessed = 'Yes' if update was successful
+    // const updateCFErrors = await updateAndromedaData(carryForwards, true);
+    // errors.push(updateCFErrors);
 
     // 7. Get all styles from SourceStyleImport where AndromedaProcessed = 'No' and SourceStyle <> Style
     const nonCarryForwards = await getSQLServerData(
-      'SourceStyleImport',
+      'SourceStyleImportNew',
       `WHERE AndromedaProcessed = 'No' and SourceStyle <> Style`
     );
+    console.log(nonCarryForwards);
 
     // 8. Update carry forward flag to true in Andromeda and update AndromedaProcessed = 'Yes' if update was successful
     const updateNonCFErrors = await updateAndromedaData(
