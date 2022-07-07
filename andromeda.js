@@ -44,7 +44,10 @@ const getAndromedaData = async (query, start) => {
   );
 
   // Return only styles where the source style is not blank
-  return sourceStyleData.filter(({ SourceStyle }) => SourceStyle !== '');
+  return sourceStyleData.filter(
+    ({ SourceStyle, Season }) =>
+      SourceStyle !== '' && Season !== 'NGC' && Season !== 'TEMPLATE'
+  );
 
   // /*
   // 	Return only styles where...

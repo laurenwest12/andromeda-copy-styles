@@ -9,6 +9,7 @@ const {
   submitAllQueries,
   getSQLServerData,
   getLastRunTime,
+  submitQuery,
 } = require('./sql');
 const { getAndromedaData, updateAndromedaData } = require('./andromeda.js');
 
@@ -19,19 +20,33 @@ const server = app.listen(6000, async () => {
     await andromedaAuthorization();
     await connectDb();
 
-    // 1. Get the last time the program was ran
-    // const lastRunTime = await getLastRunTime('SourceStyleImport', 'CreatedOn');
-    const lastRunTime = '2020-06-01T12:21:26.000Z';
+    // // 1. Get the last time the program was ran
+    // // const lastRunTime = await getLastRunTime('SourceStyleImport', 'CreatedOn');
+    // const lastRunTime = '2020-06-01T12:21:26.000Z';
 
-    // 2. Get all styles that have a source style
-    const data = await getAndromedaData(
-      'ECHO-DevelopmentStyleSourceCreatedOn-1',
-      lastRunTime
-    );
+    // // 2. Get all styles that have a source style
+    // const data = await getAndromedaData(
+    //   'ECHO-DevelopmentStyleSourceCreatedOn-1',
+    //   lastRunTime
+    // );
 
-    // 3. Insert into SourceStyleImport
-    const submitErrors = await submitAllQueries(data, 'SourceStyleImportNew');
-    errors.push(submitErrors);
+    // // 3. Insert into SourceStyleImport
+    // const submitErrors = await submitAllQueries(data, 'SourceStyleImportNew');
+    // errors.push(submitErrors);
+
+    //4. Update AndromedaProcessed = 'Yes' where nothing needs to be changed in Andromeda....
+    //1. The Source Style <> Style and CarryForward = 'No' and OriginalSeasonYear = Season
+    //2. The Source Style = Style and CarryForward = 'Yes' and OriginalSeasonYear <> Season
+
+    await submitQuery(`
+    UPDATE SourceStyleImportNew SET AndromedaProcessed = 'Yes'
+    WHERE
+    ((STYLE = SourceStyle) AND
+    (CarryForward = 'Yes' and OriginalSeasonYear <> Season))
+    OR
+    ((Style <> SourceStyle) AND
+    (CarryForward = 'No' and Season = OriginalSeasonYear))
+    `);
 
     // // 4. Get all styles from SourceStyleImport where AndromedaProcessed = 'No'. This is done separately to make sure we are updating any styles that could not get updated the previous run because someone was currently editing the style in Andromeda.
     // const stylesToUpdate = await getSQLServerData(
