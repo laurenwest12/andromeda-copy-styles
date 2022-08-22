@@ -48,18 +48,30 @@ const getAndromedaData = async (query, start) => {
     ({ SourceStyle, Season }) =>
       SourceStyle !== '' && Season !== 'NGC' && Season !== 'TEMPLATE'
   );
+};
 
-  // /*
-  // 	Return only styles where...
-  // 			1. The source style is not blank
-  // 			2. The source style does not match the style number of the development style
-  // 			3. The carry forward flag is set to true
-  // 	These are the ones where the carry forward flag needs to be updated
-  //  */
-  // return sourceStyleData.filter(
-  //   ({ SourceStyle, Style, CarryForward }) =>
-  //     SourceStyle !== '' && SourceStyle !== Style && CarryForward === 'Yes'
-  // );
+const updateNuOrderFlags = async (id) => {
+  const res = await axios.get(`${url}/bo/DevelopmentStyle/${id}`);
+  const { data } = res;
+  const { Children } = data;
+  const { developmentstylecolor } = Children;
+
+  for (let i = 0; i < developmentstylecolor.length; ++i) {
+    const { id_developmentstylecolor, cat107 } = developmentstylecolor[i];
+
+    console.log(id_developmentstylecolor);
+    console.log(cat107);
+
+    const res = await axios.post(
+      `${url}/bo/DevelopmentStyleColor/${id_developmentstylecolor}`,
+      {
+        cat107: false,
+      }
+    );
+
+    console.log(res.data);
+    return res.data;
+  }
 };
 
 const updateAndromedaData = async (data, carryfoward) => {
@@ -71,12 +83,16 @@ const updateAndromedaData = async (data, carryfoward) => {
 
     if (carryfoward) {
       try {
+        //1. Update the CarryForward flag to Yes
         const res = await axios.post(`${url}/bo/DevelopmentStyle/${idStyle}`, {
           Entity: {
             cat33: true,
           },
         });
 
+        //2. Clear NuOrderApproved flag for all colors
+
+        //3. Update the processed flags
         res?.data?.IsSuccess &&
           (await updateProessedFlag('SourceStyleImport', 'idStyle', idStyle));
       } catch (err) {
@@ -87,12 +103,15 @@ const updateAndromedaData = async (data, carryfoward) => {
       }
     } else {
       try {
+        //1. Update the CarryForwardFlag to No and the OriginalSeasonYear to the current seaason
         const res = await axios.post(`${url}/bo/DevelopmentStyle/${idStyle}`, {
           Entity: {
             cat33: false,
             cat24: Season,
           },
         });
+
+        //2. Clear NuOrderApproved flag for all colors
 
         res?.data?.IsSuccess &&
           (await updateProessedFlag('SourceStyleImport', 'idStyle', idStyle));
@@ -111,4 +130,5 @@ const updateAndromedaData = async (data, carryfoward) => {
 module.exports = {
   getAndromedaData,
   updateAndromedaData,
+  updateNuOrderFlags,
 };

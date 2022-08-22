@@ -11,7 +11,11 @@ const {
   getLastRunTime,
   submitQuery,
 } = require('./sql');
-const { getAndromedaData, updateAndromedaData } = require('./andromeda.js');
+const {
+  getAndromedaData,
+  updateAndromedaData,
+  updateNuOrderFlags,
+} = require('./andromeda.js');
 
 const server = app.listen(6024, async () => {
   console.log('App is listening...');
@@ -26,50 +30,53 @@ const server = app.listen(6024, async () => {
     // 2. Get all styles that have a source style
     const data = await getAndromedaData(
       'ECHO-DevelopmentStyleSourceCreatedOn-1',
-      lastRunTime
+      //lastRunTime
+      '2022-08-15T10:23:27.000Z'
     );
 
-    // 3. Insert into SourceStyleImport
-    const submitErrors = await submitAllQueries(data, 'SourceStyleImport');
-    errors.push(submitErrors);
+    await updateNuOrderFlags(data[0].idStyle);
 
-    /* 4. Update AndromedaProcessed = 'Yes' where nothing needs to be changed in Andromeda....
-          1. The Source Style <> Style and CarryForward = 'No' and OriginalSeasonYear = Season
-          2. The Source Style = Style and CarryForward = 'Yes' and OriginalSeasonYear <> Season
-    */
+    // // 3. Insert into SourceStyleImport
+    // const submitErrors = await submitAllQueries(data, 'SourceStyleImport');
+    // errors.push(submitErrors);
 
-    await submitQuery(`
-    UPDATE SourceStyleImport SET AndromedaProcessed = 'Yes'
-    WHERE
-    ((Style = SourceStyle) AND
-    (CarryForward = 'Yes' and OriginalSeasonYear <> Season))
-    OR
-    ((Style <> SourceStyle) AND
-    (CarryForward = 'No' and Season = OriginalSeasonYear))
-    `);
+    // /* 4. Update AndromedaProcessed = 'Yes' where nothing needs to be changed in Andromeda....
+    //       1. The Source Style <> Style and CarryForward = 'No' and OriginalSeasonYear = Season
+    //       2. The Source Style = Style and CarryForward = 'Yes' and OriginalSeasonYear <> Season
+    // */
 
-    // 5. Get all styles from SourceStyleImport where AndromedaProcessed = 'No' and SourceStyle = Style
-    const carryForwards = await getSQLServerData(
-      'SourceStyleImport',
-      `WHERE AndromedaProcessed = 'No' and SourceStyle = Style`
-    );
+    // await submitQuery(`
+    // UPDATE SourceStyleImport SET AndromedaProcessed = 'Yes'
+    // WHERE
+    // ((Style = SourceStyle) AND
+    // (CarryForward = 'Yes' and OriginalSeasonYear <> Season))
+    // OR
+    // ((Style <> SourceStyle) AND
+    // (CarryForward = 'No' and Season = OriginalSeasonYear))
+    // `);
 
-    // 6. Update carry forward flag to true in Andromeda and update AndromedaProcessed = 'Yes' if update was successful
-    const updateCFErrors = await updateAndromedaData(carryForwards, true);
-    errors.push(updateCFErrors);
+    // // 5. Get all styles from SourceStyleImport where AndromedaProcessed = 'No' and SourceStyle = Style
+    // const carryForwards = await getSQLServerData(
+    //   'SourceStyleImport',
+    //   `WHERE AndromedaProcessed = 'No' and SourceStyle = Style`
+    // );
 
-    // 7. Get all styles from SourceStyleImport where AndromedaProcessed = 'No' and SourceStyle <> Style
-    const nonCarryForwards = await getSQLServerData(
-      'SourceStyleImport',
-      `WHERE AndromedaProcessed = 'No' and SourceStyle <> Style`
-    );
+    // // 6. Update carry forward flag to true in Andromeda and update AndromedaProcessed = 'Yes' if update was successful
+    // const updateCFErrors = await updateAndromedaData(carryForwards, true);
+    // errors.push(updateCFErrors);
 
-    // 8. Update carry forward flag to true in Andromeda and update AndromedaProcessed = 'Yes' if update was successful
-    const updateNonCFErrors = await updateAndromedaData(
-      nonCarryForwards,
-      false
-    );
-    errors.push(updateNonCFErrors);
+    // // 7. Get all styles from SourceStyleImport where AndromedaProcessed = 'No' and SourceStyle <> Style
+    // const nonCarryForwards = await getSQLServerData(
+    //   'SourceStyleImport',
+    //   `WHERE AndromedaProcessed = 'No' and SourceStyle <> Style`
+    // );
+
+    // // 8. Update carry forward flag to true in Andromeda and update AndromedaProcessed = 'Yes' if update was successful
+    // const updateNonCFErrors = await updateAndromedaData(
+    //   nonCarryForwards,
+    //   false
+    // );
+    // errors.push(updateNonCFErrors);
   } catch (err) {
     errors.push({
       type,
