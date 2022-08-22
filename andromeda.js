@@ -56,22 +56,35 @@ const updateNuOrderFlags = async (id) => {
   const { Children } = data;
   const { developmentstylecolor } = Children;
 
+  const errors = [];
+
   for (let i = 0; i < developmentstylecolor.length; ++i) {
-    const { id_developmentstylecolor, cat107 } = developmentstylecolor[i];
+    const { id_developmentstylecolor } = developmentstylecolor[i];
 
-    console.log(id_developmentstylecolor);
-    console.log(cat107);
-
-    const res = await axios.post(
-      `${url}/bo/DevelopmentStyleColor/${id_developmentstylecolor}`,
-      {
-        cat107: false,
+    try {
+      const res = await axios.post(
+        `${url}/bo/DevelopmentStyleColor/${id_developmentstylecolor}`,
+        {
+          Entity: {
+            cat107: false,
+          },
+        }
+      );
+      if (!res.data.IsSuccess) {
+        errors.push({
+          idStyle: id_developmentstylecolor,
+          err: `NuOrder Flag Not Cleared: ${res.data?.Result}`,
+        });
       }
-    );
-
-    console.log(res.data);
-    return res.data;
+    } catch (err) {
+      errors.push({
+        idStyle: id_developmentstylecolor,
+        err: `NuOrder Flag Not Cleared: ${err?.message}`,
+      });
+    }
   }
+
+  return errors;
 };
 
 const updateAndromedaData = async (data, carryfoward) => {
@@ -91,6 +104,8 @@ const updateAndromedaData = async (data, carryfoward) => {
         });
 
         //2. Clear NuOrderApproved flag for all colors
+        const nuOrderFlagErrors = await updateNuOrderFlags(idStyle);
+        nuOrderFlagErrors.length && errors.push(nuOrderFlagErrors);
 
         //3. Update the processed flags
         res?.data?.IsSuccess &&
@@ -112,6 +127,8 @@ const updateAndromedaData = async (data, carryfoward) => {
         });
 
         //2. Clear NuOrderApproved flag for all colors
+        const nuOrderFlagErrors = await updateNuOrderFlags(idStyle);
+        nuOrderFlagErrors.length && errors.push(nuOrderFlagErrors);
 
         res?.data?.IsSuccess &&
           (await updateProessedFlag('SourceStyleImport', 'idStyle', idStyle));
