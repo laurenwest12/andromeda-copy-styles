@@ -184,7 +184,26 @@ const updateAndromedaData = async (data, type) => {
     const { idStyle, SourceSeason, SourceStyle, Season, Style, MarketSeason } =
       row;
 
-    if (SourceStyle !== SourceSeason) {
+    try {
+      if (SourceStyle !== SourceSeason) {
+        const res = await axios.post(`${url}/bo/DevelopmentStyle/${idStyle}`, {
+          Entity: {
+            cat24: Season,
+          },
+        });
+
+        res?.data?.IsSuccess &&
+          updateProessedFlag(
+            'SourceStyleImport',
+            idStyle,
+            'OriginalSeasonYearProcessed'
+          );
+      }
+    } catch (err) {
+      errors.push({
+        idStyle,
+        err: err?.message,
+      });
     }
   }
 };
