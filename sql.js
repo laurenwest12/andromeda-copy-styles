@@ -48,13 +48,21 @@ const executeProcedure = async (proc) => {
   return 'Complete';
 };
 
-const updateProessedFlag = async (table, field, value) => {
+const updateProessedFlag = async (table, id, field) => {
   await pool.query(
     `UPDATE ${table}
-  SET AndromedaProcessed = 'Yes', AndromedaProcessedTime = CURRENT_TIMESTAMP
-  WHERE ${field} = '${value}'`
+  SET ${field} = 'Yes', ${field}Time = CURRENT_TIMESTAMP
+  WHERE idStyle = '${id}'`
   );
 };
+
+// const updateProessedFlag = async (table, field, value) => {
+//   await pool.query(
+//     `UPDATE ${table}
+//   SET AndromedaProcessed = 'Yes', AndromedaProcessedTime = CURRENT_TIMESTAMP
+//   WHERE ${field} = '${value}'`
+//   );
+// };
 
 const submitQuery = async (query) => {
   await pool.query(query);

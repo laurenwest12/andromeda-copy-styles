@@ -30,7 +30,7 @@ const server = app.listen(6024, async () => {
     //   'TransactionOn'
     // );
 
-    const lastRunTime = '2022-10-14T16:31:48.499336+00:00';
+    const lastRunTime = '2022-08-14T16:31:48.499336+00:00';
 
     // // 2. Get all styles that have a source style
     // const data = await getAndromedaData(
