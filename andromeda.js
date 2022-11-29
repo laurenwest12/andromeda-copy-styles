@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { andromedaAuthorization } = require('./authorization.js');
 const { url } = require('./config.js');
 const { updateProessedFlag } = require('./sql.js');
 
@@ -11,6 +12,7 @@ const getAndromedaData = async (query, body) => {
 
   for (let i = 0; i < data.length; ++i) {
     const { id_item, transactionon } = data[i];
+    i % 50 === 0 && (await andromedaAuthorization());
     const styleRes = await axios.get(`${url}/bo/DevelopmentStyle/${id_item}`);
     const {
       id_developmentstyle,
@@ -90,87 +92,47 @@ const getAndromedaData = async (query, body) => {
   // );
 };
 
-const updateNuOrderFlags = async (id) => {
-  const res = await axios.get(`${url}/bo/DevelopmentStyle/${id}`);
-  const { data } = res;
-  const { Children } = data;
-  const { developmentstylecolor } = Children;
-
-  const errors = [];
-
-  for (let i = 0; i < developmentstylecolor.length; ++i) {
-    const { id_developmentstylecolor } = developmentstylecolor[i];
-
-    try {
-      const res = await axios.post(
-        `${url}/bo/DevelopmentStyleColor/${id_developmentstylecolor}`,
-        {
-          Entity: {
-            cat107: false,
-          },
-        }
-      );
-      if (!res.data.IsSuccess) {
-        errors.push({
-          idStyle: id_developmentstylecolor,
-          err: `NuOrder Flag Not Cleared: ${res.data?.Result}`,
-        });
-      }
-    } catch (err) {
-      errors.push({
-        idStyle: id_developmentstylecolor,
-        err: `NuOrder Flag Not Cleared: ${err?.message}`,
-      });
-    }
-  }
-
-  return errors;
-};
-
-const updateAndromedaData = async (data, type) => {
+const updateCarryforwards = async (data) => {
   const errors = [];
   for (let i = 0; i < data.length; ++i) {
-    const row = data[i];
+    const { idStyle, CarryForward } = data[i];
 
-    if (type === 'carryforward') {
-      const { idStyle, CarryForward } = row;
-
+    if (CarryForward.trim() === 'Yes') {
       try {
-        if (CarryForward === 'Yes') {
-          const res = await axios.post(
-            `${url}/bo/DevelopmentStyle/${idStyle}`,
-            {
-              Entity: {
-                cat33: false,
-              },
-            }
+        const res = await axios.post(`${url}/bo/DevelopmentStyle/${idStyle}`, {
+          Entity: {
+            cat33: false,
+          },
+        });
+
+        res?.data?.IsSuccess &&
+          updateProessedFlag(
+            'SourceStyleImport',
+            idStyle,
+            'CarryForwardProcessed'
           );
+      } catch (err) {
+        errors.push({
+          idStyle,
+          err: err?.message,
+        });
+      }
+    }
 
-          res?.data?.IsSuccess &&
-            updateProessedFlag(
-              'SourceStyleImport',
-              idStyle,
-              'CarryForwardProcessed'
-            );
-        }
+    if (CarryForward.trim() === 'No') {
+      try {
+        const res = await axios.post(`${url}/bo/DevelopmentStyle/${idStyle}`, {
+          Entity: {
+            cat33: true,
+          },
+        });
 
-        if (CarryForward === 'No') {
-          const res = await axios.post(
-            `${url}/bo/DevelopmentStyle/${idStyle}`,
-            {
-              Entity: {
-                cat33: true,
-              },
-            }
+        res?.data?.IsSuccess &&
+          updateProessedFlag(
+            'SourceStyleImport',
+            idStyle,
+            'CarryForwardProcessed'
           );
-
-          res?.data?.IsSuccess &&
-            updateProessedFlag(
-              'SourceStyleImport',
-              idStyle,
-              'CarryForwardProcessed'
-            );
-        }
       } catch (err) {
         errors.push({
           idStyle,
@@ -179,13 +141,16 @@ const updateAndromedaData = async (data, type) => {
       }
     }
   }
+  return errors;
+};
 
-  if (type === 'originalseasonyear') {
-    const { idStyle, SourceSeason, SourceStyle, Season, Style, MarketSeason } =
-      row;
+const updateOriginalSeasonYear = async (data) => {
+  const errors = [];
+  for (let i = 0; i < data.length; ++i) {
+    const { idStyle, SourceSeason, SourceStyle, Season } = data[i];
 
-    try {
-      if (SourceStyle !== SourceSeason) {
+    if (SourceStyle !== SourceSeason) {
+      try {
         const res = await axios.post(`${url}/bo/DevelopmentStyle/${idStyle}`, {
           Entity: {
             cat24: Season,
@@ -198,75 +163,19 @@ const updateAndromedaData = async (data, type) => {
             idStyle,
             'OriginalSeasonYearProcessed'
           );
+      } catch (err) {
+        errors.push({
+          idStyle,
+          err: err?.message,
+        });
       }
-    } catch (err) {
-      errors.push({
-        idStyle,
-        err: err?.message,
-      });
     }
   }
+  return errors;
 };
-
-// const updateAndromedaData = async (data, carryfoward) => {
-//   const errors = [];
-
-//   for (let i = 0; i < data.length; ++i) {
-//     const { idStyle, Style, Season, OriginalSeasonYear } = data[i];
-//     console.log(idStyle, Style, Season, OriginalSeasonYear);
-
-//     if (carryfoward) {
-//       try {
-//         //1. Update the CarryForward flag to Yes
-//         const res = await axios.post(`${url}/bo/DevelopmentStyle/${idStyle}`, {
-//           Entity: {
-//             cat33: true,
-//           },
-//         });
-
-//         //2. Clear NuOrderApproved flag for all colors
-//         const nuOrderFlagErrors = await updateNuOrderFlags(idStyle);
-//         nuOrderFlagErrors.length && errors.push(nuOrderFlagErrors);
-
-//         //3. Update the processed flags
-//         res?.data?.IsSuccess &&
-//           (await updateProessedFlag('SourceStyleImport', 'idStyle', idStyle));
-//       } catch (err) {
-//         errors.push({
-//           idStyle,
-//           err: err?.message,
-//         });
-//       }
-//     } else {
-//       try {
-//         //1. Update the CarryForwardFlag to No and the OriginalSeasonYear to the current seaason
-//         const res = await axios.post(`${url}/bo/DevelopmentStyle/${idStyle}`, {
-//           Entity: {
-//             cat33: false,
-//             cat24: Season,
-//           },
-//         });
-
-//         //2. Clear NuOrderApproved flag for all colors
-//         const nuOrderFlagErrors = await updateNuOrderFlags(idStyle);
-//         nuOrderFlagErrors.length && errors.push(nuOrderFlagErrors);
-
-//         res?.data?.IsSuccess &&
-//           (await updateProessedFlag('SourceStyleImport', 'idStyle', idStyle));
-//       } catch (err) {
-//         errors.push({
-//           idStyle,
-//           err: err?.message,
-//         });
-//       }
-//     }
-//   }
-
-//   return errors;
-// };
 
 module.exports = {
   getAndromedaData,
-  updateAndromedaData,
-  updateNuOrderFlags,
+  updateCarryforwards,
+  updateOriginalSeasonYear,
 };
